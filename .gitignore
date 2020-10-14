@@ -1,0 +1,9 @@
+# STM32G0 Bootloader
+# Jonah Swain
+# .gitignore
+
+# Build process outputs
+*.o
+*.elf
+*.hex
+*.bin
