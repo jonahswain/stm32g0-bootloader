@@ -86,62 +86,108 @@ void main() { // Main function (bootloader logic)
         crcHandle.Instance = CRC;
         crcHandle.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_ENABLE;
         crcHandle.Init.DefaultInitValueUse = DEFAULT_INIT_VALUE_ENABLE;
-        crcHandle.Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_NONE;
-        crcHandle.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_DISABLE;
-        crcHandle.InputDataFormat = CRC_INPUTDATA_FORMAT_WORDS;
+        crcHandle.Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_BYTE;
+        crcHandle.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_ENABLE;
+        crcHandle.InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES;
         HAL_CRC_Init(&crcHandle); // Initialise CRC module
 
         if (bootloaderData.verificationMode == VERIFICATION_APP_INFO || bootloaderData.verificationMode == VERIFICATION_FULL) {
             // Verify app info
-            if (HAL_CRC_Calculate(&crcHandle, (uint32_t *) &bootloaderData.app1_info, sizeof(bootloaderData.app1_info)/4) != bootloaderData.app1_infoChecksum) {
+            if (~HAL_CRC_Calculate(&crcHandle, (uint32_t *) &bootloaderData.app1_info, sizeof(bootloaderData.app1_info)) != bootloaderData.app1_infoChecksum) {
                 app1Exclusion = 1;
             }
-            if (HAL_CRC_Calculate(&crcHandle, (uint32_t *) &bootloaderData.app2_info, sizeof(bootloaderData.app2_info)/4) != bootloaderData.app2_infoChecksum) {
+            if (~HAL_CRC_Calculate(&crcHandle, (uint32_t *) &bootloaderData.app2_info, sizeof(bootloaderData.app2_info)) != bootloaderData.app2_infoChecksum) {
                 app2Exclusion = 1;
             }
         }
 
         if (bootloaderData.verificationMode == VERIFICATION_VECTOR_TABLE) {
             // Verify app vector table
-            if (HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP1_START, VECTOR_TABLE_SIZE) != bootloaderData.app1_info.vectblChecksum) {
+            if (~HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP1_START, VECTOR_TABLE_SIZE*4) != bootloaderData.app1_info.vectblChecksum) {
                 app1Exclusion = 1;
             }
-            if (HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP2_START, VECTOR_TABLE_SIZE) != bootloaderData.app2_info.vectblChecksum) {
+            if (~HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP2_START, VECTOR_TABLE_SIZE*4) != bootloaderData.app2_info.vectblChecksum) {
                 app2Exclusion = 1;
             }
         }
 
         if (bootloaderData.verificationMode == VERIFICATION_APPLICATION || bootloaderData.verificationMode == VERIFICATION_FULL) {
             // Verify application
-            if (bootloaderData.app1_info.size % 4) { // If application size is not word aligned then CRC has to be calculated for word aligned part and remaining bytes
-                HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP1_START, bootloaderData.app1_info.size/4);
-                crcHandle.InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES;
-                if (HAL_CRC_Accumulate(&crcHandle, (uint32_t *)(&__FLASH_APP1_START + bootloaderData.app1_info.size - (bootloaderData.app1_info.size % 4)), bootloaderData.app1_info.size % 4) != bootloaderData.app1_info.appChecksum) {
-                    app1Exclusion = 1;
-                }
-                crcHandle.InputDataFormat = CRC_INPUTDATA_FORMAT_WORDS;
-            } else {
-                if (HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP1_START, bootloaderData.app1_info.size/4) != bootloaderData.app1_info.appChecksum) {
-                    app1Exclusion = 1;
-                }
+            if (~HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP1_START, bootloaderData.app1_info.size) != bootloaderData.app1_info.appChecksum) {
+                app1Exclusion = 1;
             }
-            if (bootloaderData.app2_info.size % 4) { // If application size is not word aligned then CRC has to be calculated for word aligned part and remaining bytes
-                HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP2_START, bootloaderData.app2_info.size/4);
-                crcHandle.InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES;
-                if (HAL_CRC_Accumulate(&crcHandle, (uint32_t *)(&__FLASH_APP2_START + bootloaderData.app2_info.size - (bootloaderData.app2_info.size % 4)), bootloaderData.app2_info.size % 4) != bootloaderData.app2_info.appChecksum) {
-                    app2Exclusion = 1;
-                }
-                crcHandle.InputDataFormat = CRC_INPUTDATA_FORMAT_WORDS;
-            } else {
-                if (HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP2_START, bootloaderData.app2_info.size/4) != bootloaderData.app2_info.appChecksum) {
-                    app2Exclusion = 1;
-                }
+            if (~HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP2_START, bootloaderData.app2_info.size) != bootloaderData.app2_info.appChecksum) {
+                app2Exclusion = 1;
             }
         }
 
         HAL_CRC_DeInit(&crcHandle); // De-initialise CRC module
         __HAL_RCC_CRC_CLK_DISABLE(); // Disable CRC module clock
     }
+
+    // if (bootloaderData.verificationMode != VERIFICATION_OFF) {
+    //     __HAL_RCC_CRC_CLK_ENABLE(); // Enable CRC module clock
+    //     // Configure CRC handle
+    //     CRC_HandleTypeDef crcHandle;
+    //     crcHandle.Instance = CRC;
+    //     crcHandle.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_ENABLE;
+    //     crcHandle.Init.DefaultInitValueUse = DEFAULT_INIT_VALUE_ENABLE;
+    //     crcHandle.Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_NONE;
+    //     crcHandle.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_DISABLE;
+    //     crcHandle.InputDataFormat = CRC_INPUTDATA_FORMAT_WORDS;
+    //     HAL_CRC_Init(&crcHandle); // Initialise CRC module
+
+    //     if (bootloaderData.verificationMode == VERIFICATION_APP_INFO || bootloaderData.verificationMode == VERIFICATION_FULL) {
+    //         // Verify app info
+    //         if (HAL_CRC_Calculate(&crcHandle, (uint32_t *) &bootloaderData.app1_info, sizeof(bootloaderData.app1_info)/4) != bootloaderData.app1_infoChecksum) {
+    //             app1Exclusion = 1;
+    //         }
+    //         if (HAL_CRC_Calculate(&crcHandle, (uint32_t *) &bootloaderData.app2_info, sizeof(bootloaderData.app2_info)/4) != bootloaderData.app2_infoChecksum) {
+    //             app2Exclusion = 1;
+    //         }
+    //     }
+
+    //     if (bootloaderData.verificationMode == VERIFICATION_VECTOR_TABLE) {
+    //         // Verify app vector table
+    //         if (HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP1_START, VECTOR_TABLE_SIZE) != bootloaderData.app1_info.vectblChecksum) {
+    //             app1Exclusion = 1;
+    //         }
+    //         if (HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP2_START, VECTOR_TABLE_SIZE) != bootloaderData.app2_info.vectblChecksum) {
+    //             app2Exclusion = 1;
+    //         }
+    //     }
+
+    //     if (bootloaderData.verificationMode == VERIFICATION_APPLICATION || bootloaderData.verificationMode == VERIFICATION_FULL) {
+    //         // Verify application
+    //         if (bootloaderData.app1_info.size % 4) { // If application size is not word aligned then CRC has to be calculated for word aligned part and remaining bytes
+    //             HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP1_START, bootloaderData.app1_info.size/4);
+    //             crcHandle.InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES;
+    //             if (HAL_CRC_Accumulate(&crcHandle, (uint32_t *)(&__FLASH_APP1_START + bootloaderData.app1_info.size - (bootloaderData.app1_info.size % 4)), bootloaderData.app1_info.size % 4) != bootloaderData.app1_info.appChecksum) {
+    //                 app1Exclusion = 1;
+    //             }
+    //             crcHandle.InputDataFormat = CRC_INPUTDATA_FORMAT_WORDS;
+    //         } else {
+    //             if (HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP1_START, bootloaderData.app1_info.size/4) != bootloaderData.app1_info.appChecksum) {
+    //                 app1Exclusion = 1;
+    //             }
+    //         }
+    //         if (bootloaderData.app2_info.size % 4) { // If application size is not word aligned then CRC has to be calculated for word aligned part and remaining bytes
+    //             HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP2_START, bootloaderData.app2_info.size/4);
+    //             crcHandle.InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES;
+    //             if (HAL_CRC_Accumulate(&crcHandle, (uint32_t *)(&__FLASH_APP2_START + bootloaderData.app2_info.size - (bootloaderData.app2_info.size % 4)), bootloaderData.app2_info.size % 4) != bootloaderData.app2_info.appChecksum) {
+    //                 app2Exclusion = 1;
+    //             }
+    //             crcHandle.InputDataFormat = CRC_INPUTDATA_FORMAT_WORDS;
+    //         } else {
+    //             if (HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP2_START, bootloaderData.app2_info.size/4) != bootloaderData.app2_info.appChecksum) {
+    //                 app2Exclusion = 1;
+    //             }
+    //         }
+    //     }
+
+    //     HAL_CRC_DeInit(&crcHandle); // De-initialise CRC module
+    //     __HAL_RCC_CRC_CLK_DISABLE(); // Disable CRC module clock
+    // }
 
     // Select application
     uint8_t appSelection;
