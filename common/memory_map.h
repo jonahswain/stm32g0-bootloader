@@ -31,6 +31,8 @@ extern int __FLASH_APP2_START;
 extern int __FLASH_APP2_LEN;
 extern int __SRAM_START;
 extern int __SRAM_LEN;
+extern int __SRAM_BL_STATIC_START;
+extern int __SRAM_BL_STATIC_LEN;
 
 /* FUNCTIONS */
 

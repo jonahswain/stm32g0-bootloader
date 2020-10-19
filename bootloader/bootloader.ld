@@ -116,7 +116,7 @@ SECTIONS
 
         . = ALIGN(4);
         __BL_DATA_END = .; /* Global symbol for end of bootloader .data (data) section */
-    } >SRAM AT> FLASH_BL_CORE
+    } >SRAM_BL_STATIC AT> FLASH_BL_CORE
 
     /* Uninitialised data/variables in data memory */
     .bss :
@@ -129,7 +129,7 @@ SECTIONS
 
         . = ALIGN(4);
         __BL_BSS_END = .; /* Global symbol for end of bootloader .bss (uninitialised data) section */
-    } >SRAM
+    } >SRAM_BL_STATIC
 
     /* User-mode heap and stack in data memory (checks that sufficient SRAM is available) */
     ._user_heap_stack :
