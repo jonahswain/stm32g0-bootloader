@@ -7,3 +7,7 @@
 *.elf
 *.hex
 *.bin
+*.map
+
+# Test blink program
+blink/*
