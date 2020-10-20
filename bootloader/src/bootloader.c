@@ -273,12 +273,12 @@ BootloaderStatus_T app1_writeInfo(AppInfo_T info){ // Write app 1 info to bootlo
     crcHandle.Instance = CRC;
     crcHandle.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_ENABLE;
     crcHandle.Init.DefaultInitValueUse = DEFAULT_INIT_VALUE_ENABLE;
-    crcHandle.Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_NONE;
-    crcHandle.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_DISABLE;
-    crcHandle.InputDataFormat = CRC_INPUTDATA_FORMAT_WORDS;
+    crcHandle.Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_BYTE;
+    crcHandle.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_ENABLE;
+    crcHandle.InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES;
     HAL_CRC_Init(&crcHandle); // Initialise CRC module
 
-    uint32_t appInfoChecksum = HAL_CRC_Calculate(&crcHandle, (uint32_t *) &info, sizeof(info)/4);
+    uint32_t appInfoChecksum = HAL_CRC_Calculate(&crcHandle, (uint32_t *) &info, sizeof(info));
 
     HAL_CRC_DeInit(&crcHandle); // De-initialise CRC module
     __HAL_RCC_CRC_CLK_DISABLE(); // Disable CRC module clock
@@ -403,12 +403,12 @@ BootloaderStatus_T app2_writeInfo(AppInfo_T info){ // Write app 2 info to bootlo
     crcHandle.Instance = CRC;
     crcHandle.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_ENABLE;
     crcHandle.Init.DefaultInitValueUse = DEFAULT_INIT_VALUE_ENABLE;
-    crcHandle.Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_NONE;
-    crcHandle.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_DISABLE;
-    crcHandle.InputDataFormat = CRC_INPUTDATA_FORMAT_WORDS;
+    crcHandle.Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_BYTE;
+    crcHandle.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_ENABLE;
+    crcHandle.InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES;
     HAL_CRC_Init(&crcHandle); // Initialise CRC module
 
-    uint32_t appInfoChecksum = HAL_CRC_Calculate(&crcHandle, (uint32_t *) &info, sizeof(info)/4);
+    uint32_t appInfoChecksum = HAL_CRC_Calculate(&crcHandle, (uint32_t *) &info, sizeof(info));
 
     HAL_CRC_DeInit(&crcHandle); // De-initialise CRC module
     __HAL_RCC_CRC_CLK_DISABLE(); // Disable CRC module clock
