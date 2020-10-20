@@ -177,7 +177,7 @@ WatchdogMode_T getWatchdogMode(){ // Get the current watchdog mode
 
 BootloaderStatus_T setWatchdogMode(WatchdogMode_T mode){ // Set the watchdog mode
     BootloaderData_T bootloaderData = getBootloaderData();
-    bootloaderData.verificationMode = mode;
+    bootloaderData.watchdogMode = mode;
     BootloaderStatus_T status;
     status = writeBootloaderData(bootloaderData);
     if (status != BL_OK) {return status;}
@@ -216,8 +216,11 @@ uint8_t app1_getFaultCount(){ // Get the fault count of application 1
 
 BootloaderStatus_T app1_resetFaultCount(){ // Reset the fault count of application 1
     BootloaderData_T bootloaderData = getBootloaderData();
-    bootloaderData.app1_faultCount = 0;
-    return writeBootloaderData(bootloaderData);
+    if (bootloaderData.app1_faultCount != 0) {
+        bootloaderData.app1_faultCount = 0;
+        return writeBootloaderData(bootloaderData);
+    }
+    return BL_OK;
 }
 
 AppInfo_T app1_getInfo(){ // Get the app info of application 1
@@ -343,8 +346,11 @@ uint8_t app2_getFaultCount(){ // Get the fault count of application 2
 
 BootloaderStatus_T app2_resetFaultCount(){ // Reset the fault count of application 2
     BootloaderData_T bootloaderData = getBootloaderData();
-    bootloaderData.app2_faultCount = 0;
-    return writeBootloaderData(bootloaderData);
+    if (bootloaderData.app2_faultCount != 0) {
+        bootloaderData.app2_faultCount = 0;
+        return writeBootloaderData(bootloaderData);
+    }
+    return BL_OK;
 }
 
 AppInfo_T app2_getInfo(){ // Get the app info of application 2
