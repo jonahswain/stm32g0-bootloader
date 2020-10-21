@@ -131,6 +131,14 @@ SECTIONS
         __BL_BSS_END = .; /* Global symbol for end of bootloader .bss (uninitialised data) section */
     } >SRAM_BL_STATIC
 
+    /* Special bootloader persistent variables in bootloader reserved data memory */
+    .sram_bl_static :
+    {
+        . = ALIGN(4);
+        *(.sram_bl_static)
+        *(.sram_bl_static*)
+    } >SRAM_BL_STATIC
+
     /* User-mode heap and stack in data memory (checks that sufficient SRAM is available) */
     ._user_heap_stack :
     {

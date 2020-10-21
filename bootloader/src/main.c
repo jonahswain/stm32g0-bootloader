@@ -13,20 +13,13 @@ Bootloader logic code
 
 
 /* GLOBAL VARIABLES */
-
+uint8_t appSelection __attribute__((section(".sram_bl_static"))); // App selection in special section
 
 /* FUNCTIONS */
 
 void main() { // Main function (bootloader logic)
     __HAL_RCC_SYSCFG_CLK_ENABLE(); // Enable sysconfig module clock
     __HAL_RCC_PWR_CLK_ENABLE(); // Enable PWR module clock
-    
-    // Check if reset was triggered by watchdog
-    uint8_t errorCondition = 0;
-    if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST)) {
-        errorCondition = 1;
-        __HAL_RCC_CLEAR_RESET_FLAGS();
-    }
 
     BootloaderData_T bootloaderData = getBootloaderData(); // Get bootloader data from flash
     
@@ -57,6 +50,22 @@ void main() { // Main function (bootloader logic)
         bootloaderData.blVersion = BOOTLOADER_VERSION; // Update version number
         writeBootloaderData(bootloaderData); // Write back to flash
     }
+
+    // Check for watchdog reset
+    if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST)) {
+        __HAL_RCC_CLEAR_RESET_FLAGS(); // Clear flags
+
+        // Update appropriate app fault count
+        if (appSelection == 1) {
+            bootloaderData.app1_faultCount++;
+            writeBootloaderData(bootloaderData);
+        } else if (appSelection == 2) {
+            bootloaderData.app2_faultCount++;
+            writeBootloaderData(bootloaderData);
+        }
+    }
+
+    appSelection = 0; // Reset app selection
 
     // Check for application exclusion factors
     uint8_t app1Exclusion = 0;
@@ -125,72 +134,7 @@ void main() { // Main function (bootloader logic)
         __HAL_RCC_CRC_CLK_DISABLE(); // Disable CRC module clock
     }
 
-    // if (bootloaderData.verificationMode != VERIFICATION_OFF) {
-    //     __HAL_RCC_CRC_CLK_ENABLE(); // Enable CRC module clock
-    //     // Configure CRC handle
-    //     CRC_HandleTypeDef crcHandle;
-    //     crcHandle.Instance = CRC;
-    //     crcHandle.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_ENABLE;
-    //     crcHandle.Init.DefaultInitValueUse = DEFAULT_INIT_VALUE_ENABLE;
-    //     crcHandle.Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_NONE;
-    //     crcHandle.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_DISABLE;
-    //     crcHandle.InputDataFormat = CRC_INPUTDATA_FORMAT_WORDS;
-    //     HAL_CRC_Init(&crcHandle); // Initialise CRC module
-
-    //     if (bootloaderData.verificationMode == VERIFICATION_APP_INFO || bootloaderData.verificationMode == VERIFICATION_FULL) {
-    //         // Verify app info
-    //         if (HAL_CRC_Calculate(&crcHandle, (uint32_t *) &bootloaderData.app1_info, sizeof(bootloaderData.app1_info)/4) != bootloaderData.app1_infoChecksum) {
-    //             app1Exclusion = 1;
-    //         }
-    //         if (HAL_CRC_Calculate(&crcHandle, (uint32_t *) &bootloaderData.app2_info, sizeof(bootloaderData.app2_info)/4) != bootloaderData.app2_infoChecksum) {
-    //             app2Exclusion = 1;
-    //         }
-    //     }
-
-    //     if (bootloaderData.verificationMode == VERIFICATION_VECTOR_TABLE) {
-    //         // Verify app vector table
-    //         if (HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP1_START, VECTOR_TABLE_SIZE) != bootloaderData.app1_info.vectblChecksum) {
-    //             app1Exclusion = 1;
-    //         }
-    //         if (HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP2_START, VECTOR_TABLE_SIZE) != bootloaderData.app2_info.vectblChecksum) {
-    //             app2Exclusion = 1;
-    //         }
-    //     }
-
-    //     if (bootloaderData.verificationMode == VERIFICATION_APPLICATION || bootloaderData.verificationMode == VERIFICATION_FULL) {
-    //         // Verify application
-    //         if (bootloaderData.app1_info.size % 4) { // If application size is not word aligned then CRC has to be calculated for word aligned part and remaining bytes
-    //             HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP1_START, bootloaderData.app1_info.size/4);
-    //             crcHandle.InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES;
-    //             if (HAL_CRC_Accumulate(&crcHandle, (uint32_t *)(&__FLASH_APP1_START + bootloaderData.app1_info.size - (bootloaderData.app1_info.size % 4)), bootloaderData.app1_info.size % 4) != bootloaderData.app1_info.appChecksum) {
-    //                 app1Exclusion = 1;
-    //             }
-    //             crcHandle.InputDataFormat = CRC_INPUTDATA_FORMAT_WORDS;
-    //         } else {
-    //             if (HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP1_START, bootloaderData.app1_info.size/4) != bootloaderData.app1_info.appChecksum) {
-    //                 app1Exclusion = 1;
-    //             }
-    //         }
-    //         if (bootloaderData.app2_info.size % 4) { // If application size is not word aligned then CRC has to be calculated for word aligned part and remaining bytes
-    //             HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP2_START, bootloaderData.app2_info.size/4);
-    //             crcHandle.InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES;
-    //             if (HAL_CRC_Accumulate(&crcHandle, (uint32_t *)(&__FLASH_APP2_START + bootloaderData.app2_info.size - (bootloaderData.app2_info.size % 4)), bootloaderData.app2_info.size % 4) != bootloaderData.app2_info.appChecksum) {
-    //                 app2Exclusion = 1;
-    //             }
-    //             crcHandle.InputDataFormat = CRC_INPUTDATA_FORMAT_WORDS;
-    //         } else {
-    //             if (HAL_CRC_Calculate(&crcHandle, (uint32_t *)&__FLASH_APP2_START, bootloaderData.app2_info.size/4) != bootloaderData.app2_info.appChecksum) {
-    //                 app2Exclusion = 1;
-    //             }
-    //         }
-    //     }
-
-    //     HAL_CRC_DeInit(&crcHandle); // De-initialise CRC module
-    //     __HAL_RCC_CRC_CLK_DISABLE(); // Disable CRC module clock
-    // }
-
     // Select application
-    uint8_t appSelection;
 
     if (app1Exclusion && app2Exclusion) {
         appSelection = 0; // If both applications are excluded then no application is selected
@@ -219,17 +163,6 @@ void main() { // Main function (bootloader logic)
         } else {
             // If bootloader boot priority is invalid then no application is selected
             appSelection = 0;
-        }
-    }
-
-    // If an error condition was detected earlier, increment the fault count of the selected application
-    if (errorCondition) {
-        if (appSelection == 1) {
-            bootloaderData.app1_faultCount += 1;
-            writeBootloaderData(bootloaderData);
-        } else if (appSelection == 2) {
-            bootloaderData.app2_faultCount += 1;
-            writeBootloaderData(bootloaderData);
         }
     }
 
