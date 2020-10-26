@@ -304,7 +304,7 @@ void main() {
         }
     }
 
-    // Enable vector table checksum verification
+    // Enable application checksum verification
     bootloader->setVerificationMode(VERIFICATION_APPLICATION);
 
     // Initialise and configure onboard LED (LD4/PA5)
@@ -343,7 +343,7 @@ void main() {
         }
     }
 
-    // Enable vector table checksum verification
+    // Enable application checksum verification
     bootloader->setVerificationMode(VERIFICATION_APPLICATION);
 
     // Initialise and configure onboard LED (LD4/PA5)
@@ -417,7 +417,7 @@ void main() {
     while (1) { // Main loop (loop forever)
         bootloader->resetWatchdog(); // Reset watchdog
         HAL_GPIO_TogglePin(LD4_Port, LD4_Pin); // Toggle LED
-        HAL_Delay(BLINK_DELAY); // Delay
+        HAL_Delay(2*BLINK_DELAY); // Delay
     }
 }
 #endif
@@ -440,7 +440,7 @@ void main() {
 
     while (1) { // Main loop (loop forever)
         HAL_GPIO_TogglePin(LD4_Port, LD4_Pin); // Toggle LED
-        HAL_Delay(BLINK_DELAY); // Delay
+        HAL_Delay(2*BLINK_DELAY); // Delay
     }
 }
 #endif
